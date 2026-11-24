@@ -1,10 +1,15 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'core/supabase_client_config.dart';
+import 'features/auth/auth_gate.dart';
+import 'features/auth/auth_repository.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'theme/app_theme.dart';
 
 class LifeOsApp extends StatelessWidget {
-  const LifeOsApp({super.key});
+  const LifeOsApp({this.authRepository, super.key});
+
+  final AuthRepository? authRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +17,30 @@ class LifeOsApp extends StatelessWidget {
       title: 'Life OS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const SignInScreen(),
+      home: _home(),
     );
   }
+
+  Widget _home() {
+    final configuredClient = SupabaseClientConfig.client;
+    final repository =
+        authRepository ??
+        (configuredClient == null
+            ? null
+            : SupabaseAuthRepository(configuredClient));
+    if (repository == null) return const SignInScreen(repository: null);
+    return AuthGate(
+      repository: repository,
+      authenticatedBuilder: (_) => const _TodayPlaceholder(),
+    );
+  }
+}
+
+class _TodayPlaceholder extends StatelessWidget {
+  const _TodayPlaceholder();
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(
+    body: SafeArea(child: Center(child: Text('Hoje'))),
+  );
 }
