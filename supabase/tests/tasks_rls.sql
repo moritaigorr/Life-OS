@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(12);
 
 -- Minimal deterministic identities for exercising auth.uid() and the FK.
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
@@ -39,8 +39,16 @@ select throws_ok(
   '23514', null, 'blank titles are rejected by the database'
 );
 select throws_ok(
+  $$insert into public.tasks (id, user_id, title) values ('ffffffff-ffff-4fff-8fff-ffffffffffff', auth.uid(), E' \t\n')$$,
+  '23514', null, 'whitespace-only titles are rejected by the database'
+);
+select throws_ok(
   $$insert into public.tasks (id, user_id, title) values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', auth.uid(), repeat('x', 201))$$,
   '23514', null, 'titles longer than 200 characters are rejected'
+);
+select lives_ok(
+  $$insert into public.tasks (id, user_id, title) values ('abababab-abab-4bab-8bab-abababababab', auth.uid(), repeat('💪', 100))$$,
+  'unicode title length follows the database character limit'
 );
 reset role;
 

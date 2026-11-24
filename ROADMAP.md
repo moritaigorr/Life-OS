@@ -1,8 +1,19 @@
 # Life OS — Roadmap do projeto
 
-**Data:** 23/11/2026  
-**Status:** planejamento inicial; nenhum software ou serviço de produção foi implementado.  
+**Data:** 24/11/2026
+**Status:** primeira fatia mobile implementada e validada em Android local; nenhum serviço de produção foi criado.
 **Base:** [PRD](./life-os.md), [arquitetura mobile](./arquitetura.md) e [instruções para agentes](./AGENTS.md).
+
+## Estado atual
+
+- Ambiente local preparado: Flutter/Dart, Android SDK, emulador Android, Docker Desktop e Supabase CLI.
+- App Flutter criado em `apps/mobile`; cliente Supabase usa somente URL e chave publicável de desenvolvimento, fora do Git.
+- Migração inicial e isolamento de `tasks` por RLS aplicados no Supabase local; suíte pgTAP passou em 12 verificações.
+- Login, cadastro, recuperação de senha, sessão em armazenamento seguro e fluxo Hoje com criação/leitura de tarefas implementados.
+- `flutter analyze`, 10 testes Flutter, migrações e 12 verificações pgTAP passaram; build e jornada Android foram validados no emulador.
+- Persistência após reabrir o app e isolamento entre duas contas foram verificados no Android local e no banco.
+- iOS ainda exige macOS/Xcode. Não existe ambiente hospedado, assinatura de release, CI ou fila offline.
+- Próximo: revisar a experiência do MVP e avançar para áreas da vida/metas, mantendo validação de acesso no servidor.
 
 ## Visão do roadmap
 

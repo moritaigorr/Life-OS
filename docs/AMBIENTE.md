@@ -1,56 +1,56 @@
 # Ambiente de desenvolvimento
 
-Preparação feita em 24/11/2026 para a primeira fatia Android do Life OS.
+Preparado em 24/11/2026 para desenvolver e validar a primeira fatia mobile do Life OS. A configuração é local; não há projeto Supabase de staging ou produção conectado.
 
-## Ferramentas instaladas
+## Ferramentas
 
 - Flutter 3.50.1 estável; Dart 3.14.0.
 - Android SDK 36.0.0, Build Tools 36.0.0 e Platform Tools.
-- Emulador Android com imagem Google APIs 36 (`LifeOS_API_36`, perfil Pixel 6); boot validado e emulador desligado.
+- Emulador Android `LifeOS_API_36` (Pixel 6, Google APIs 36).
 - Eclipse Temurin JDK 25.0.4.1.
 - Supabase CLI 3.3.0.
-- Docker Desktop 4.85.0 com engine 29.6.2 e backend WSL2.
+- Docker Desktop 4.85.0, engine 29.6.2 e backend WSL2.
 
-Os caminhos e variáveis `ANDROID_HOME`, `ANDROID_SDK_ROOT` e `JAVA_HOME` foram gravados no perfil do Windows. Abra um terminal novo para receber o `PATH` atualizado.
+Os caminhos e as variáveis `ANDROID_HOME`, `ANDROID_SDK_ROOT` e `JAVA_HOME` foram gravados no perfil do Windows. Abra um terminal novo para carregar o `PATH` atualizado. A primeira build Android pode instalar automaticamente a versão de NDK exigida pelo projeto.
 
 ## Supabase local
 
-O arquivo `supabase/config.toml` foi criado e a stack local está rodando pelo Docker. No diretório raiz do repositório:
+O arquivo `supabase/config.toml` configura a stack local. O projeto usa Auth, Postgres e Studio. Analytics locais foram desativados porque o coletor Vector não alcançava a API Docker IPv6 deste ambiente; isso não afeta Auth, REST ou Postgres.
+
+Na raiz do repositório:
 
 ```powershell
 supabase start
-supabase stop
+supabase migration up
+supabase test db
 ```
 
-URLs locais:
+O Studio local fica em `http://127.0.0.1:54323`. `supabase status` exporta também credenciais de serviço: não copie nem publique chaves secretas ou `service_role`. O app só usa URL e chave publicável.
 
-- API: `http://127.0.0.1:54321`
-- PostgreSQL: `127.0.0.1:54322`
-- Studio: `http://127.0.0.1:54323`
-- Mailpit para mensagens de autenticação: `http://127.0.0.1:54324`
+## Executar no Android
 
-Analytics/logs locais foram desligados: o coletor Vector tentava acessar a API de logs do Docker via IPv6 e reiniciava repetidamente neste ambiente Windows/WSL. Isso não afeta Auth, PostgreSQL, REST, Storage ou o fluxo de tarefas; pode ser reavaliado quando houver necessidade de depurar logs no Studio.
-
-As chaves e senhas mostradas pelo `supabase start` são credenciais de desenvolvimento local. Não as publique, não as copie para o app e não as coloque no Git. O cliente Flutter deve usar somente a chave pública local; a chave `service_role` nunca deve ir para o cliente.
-
-## Executar o app
-
-O projeto Flutter ainda não foi criado. Depois da Task 1 do plano:
-
-```powershell
-cd apps/mobile
-flutter pub get
-flutter run
-```
-
-Inicie o emulador preparado ou conecte um Android com depuração USB antes de `flutter run`:
+Crie `apps/mobile/env/local.json` a partir de `apps/mobile/env/example.json` e preencha com a URL local e a chave publicável local. O arquivo `local.json` é ignorado pelo Git. Para o emulador Android, a URL da máquina host é `http://10.0.2.2:54321`.
 
 ```powershell
 flutter emulators --launch LifeOS_API_36
+cd apps/mobile
+flutter pub get
+flutter run --dart-define-from-file=env/local.json
 ```
 
-A compilação iOS exige macOS e Xcode; este Windows não pode produzir ou executar um build iOS local.
+Para analisar e rodar testes:
+
+```powershell
+flutter analyze
+flutter test
+```
+
+O app é online-first nesta primeira fatia. Sem rede, a lista mostra erro e a tarefa não é considerada salva; a fila offline ainda não foi implementada. O retry mantém o mesmo identificador de operação para evitar duplicação após uma resposta ambígua.
+
+## Limites de plataforma
+
+Os arquivos Android e iOS foram gerados e o callback de recuperação de senha usa `lifeos://auth/recover`. Android é validado neste computador pelo emulador. A compilação e execução de iOS exigem macOS e Xcode.
 
 ## Escopo preparado
 
-A primeira fatia aprovada é online-first: autenticação por e-mail/senha com sessão persistente, criação e leitura de tarefa após reabrir o app e proteção multiusuário com RLS. A base é o Supabase local iniciado neste computador. Cache offline, sincronização, o restante dos módulos do Life OS e credenciais de staging ficam para etapas posteriores.
+A primeira fatia validada inclui cadastro/login por e-mail e senha, recuperação de acesso, sessão persistente em armazenamento seguro, criação e leitura de tarefas no Postgres, RLS por usuário e retry idempotente. A suíte atual passou em 10 testes Flutter e 12 verificações pgTAP. A jornada Android local verificou cadastro, criação, reabertura com sessão/tarefa preservadas e isolamento usando outra conta. Há um formulário local de ambiente em `apps/mobile/env/example.json`; credenciais de staging e publicação ficam para uma etapa posterior. iOS permanece sem validação por exigir macOS/Xcode. Finanças, notas, IA contextual e sincronização offline continuam fora do MVP inicial.

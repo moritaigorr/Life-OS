@@ -4,6 +4,8 @@ import 'core/supabase_client_config.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/auth/sign_in_screen.dart';
+import 'features/tasks/supabase_task_repository.dart';
+import 'features/tasks/today_screen.dart';
 import 'theme/app_theme.dart';
 
 class LifeOsApp extends StatelessWidget {
@@ -31,7 +33,12 @@ class LifeOsApp extends StatelessWidget {
     if (repository == null) return const SignInScreen(repository: null);
     return AuthGate(
       repository: repository,
-      authenticatedBuilder: (_) => const _TodayPlaceholder(),
+      authenticatedBuilder: (_) => configuredClient == null
+          ? const _TodayPlaceholder()
+          : TodayScreen(
+              repository: SupabaseTaskRepository(configuredClient),
+              onSignOut: repository.signOut,
+            ),
     );
   }
 }

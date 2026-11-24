@@ -1,6 +1,6 @@
 # Life OS mobile
 
-Flutter mobile app for Android and iOS. This scaffold currently starts at the sign-in route; Supabase authentication and task persistence are implemented in the following plan tasks.
+Flutter mobile app for Android and iOS. The first usable slice includes email authentication, secure session persistence, password recovery, and the Today task list backed by local Supabase.
 
 ## Development environment
 
@@ -37,9 +37,9 @@ Run from `apps/mobile` with:
 flutter run --dart-define-from-file=env/local.json
 ```
 
-The app can still open without backend configuration while the auth flow is
-under development. Supplying only one of the two values fails at startup with a
-configuration error instead of silently connecting to the wrong environment.
+The app can open without backend configuration for UI development. Supplying
+only one of the two values fails at startup with a configuration error instead
+of silently connecting to the wrong environment.
 
 ## Local authentication
 
@@ -54,5 +54,10 @@ supabase test db
 Local email confirmation is disabled for development. Sign up with a test email
 and a password of at least 8 characters, then sign in. Password recovery uses
 the `lifeos://auth/recover` callback registered in Android and iOS. Supabase
-Auth persists the session on-device; signing out immediately returns to the
-sign-in screen. Do not use a real personal password for local tests.
+Auth persists session tokens and short-lived PKCE verifiers in Android secure
+storage or the iOS Keychain; signing out immediately returns to the sign-in
+screen. Do not use a real personal password for local tests.
+
+The current task flow is online-first: failed requests remain visible and can
+be retried with the same operation ID. No task is presented as saved until the
+server confirms it. Offline writes are not queued in this slice.

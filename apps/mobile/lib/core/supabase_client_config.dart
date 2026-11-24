@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'secure_auth_storage.dart';
+
 /// Bootstraps the public Supabase client used by the mobile app.
 ///
 /// Only a project URL and publishable key belong in this client. Secret keys
@@ -9,6 +11,7 @@ abstract final class SupabaseClientConfig {
   static const _publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
   );
+  static final _authStorage = SecureAuthStorage();
 
   static bool get isConfigured => _url.isNotEmpty && _publishableKey.isNotEmpty;
 
@@ -26,11 +29,20 @@ abstract final class SupabaseClientConfig {
     final uri = Uri.tryParse(_url);
     if (uri == null ||
         !uri.hasAuthority ||
-        !const {'http', 'https'}.contains(uri.scheme)) {
+        !const {'http', 'https'}.contains(uri.scheme) ||
+        (uri.scheme == 'http' &&
+            !const {'10.0.2.2', '127.0.0.1', 'localhost'}.contains(uri.host))) {
       throw StateError('SUPABASE_URL must be a valid http(s) URL.');
     }
 
-    await Supabase.initialize(url: _url, publishableKey: _publishableKey);
+    await Supabase.initialize(
+      url: _url,
+      publishableKey: _publishableKey,
+      authOptions: FlutterAuthClientOptions(
+        localStorage: _authStorage,
+        pkceAsyncStorage: _authStorage,
+      ),
+    );
     return Supabase.instance.client;
   }
 }
