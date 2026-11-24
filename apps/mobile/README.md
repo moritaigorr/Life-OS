@@ -23,3 +23,20 @@ flutter test
 flutter emulators --launch LifeOS_API_36
 flutter run
 ```
+
+## Local Supabase configuration
+
+Create `env/local.json` from `env/example.json`. Supply only a Supabase project
+URL and its publishable key; never use a secret or service-role key in Flutter.
+The local Android emulator reaches the host machine at `http://10.0.2.2:54321`.
+For a simulator or desktop client, use the host's loopback address instead.
+
+Run from `apps/mobile` with:
+
+```powershell
+flutter run --dart-define-from-file=env/local.json
+```
+
+The app can still open without backend configuration while the auth flow is
+under development. Supplying only one of the two values fails at startup with a
+configuration error instead of silently connecting to the wrong environment.
