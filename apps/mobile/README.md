@@ -1,6 +1,6 @@
 # Life OS mobile
 
-Flutter mobile app for Android and iOS. The first usable slice includes email authentication, secure session persistence, password recovery, and the Today task list backed by local Supabase.
+Flutter mobile app for Android and iOS. The app includes email authentication, secure session persistence, password recovery, the Today task list, and the first Life area and assessment flow backed by local Supabase.
 
 ## Development environment
 
@@ -61,3 +61,10 @@ screen. Do not use a real personal password for local tests.
 The current task flow is online-first: failed requests remain visible and can
 be retried with the same operation ID. No task is presented as saved until the
 server confirms it. Offline writes are not queued in this slice.
+
+The Life area flow creates eight defaults on first visit. Areas can be renamed,
+reordered, archived, and restored. Assessments preserve their date, area names,
+order, scores, attention flags, and optional comment; each score is between 0
+and 10, and unscored areas do not affect the average. New Life tables and RLS
+have been applied locally; production use still requires policy tests and
+cross-account verification.

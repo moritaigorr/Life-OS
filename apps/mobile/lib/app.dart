@@ -1,9 +1,12 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/supabase_client_config.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/auth/auth_repository.dart';
 import 'features/auth/sign_in_screen.dart';
+import 'features/life/life_screen.dart';
+import 'features/life/supabase_life_repository.dart';
 import 'features/tasks/supabase_task_repository.dart';
 import 'features/tasks/today_screen.dart';
 import 'theme/app_theme.dart';
@@ -35,12 +38,66 @@ class LifeOsApp extends StatelessWidget {
       repository: repository,
       authenticatedBuilder: (_) => configuredClient == null
           ? const _TodayPlaceholder()
-          : TodayScreen(
-              repository: SupabaseTaskRepository(configuredClient),
+          : _AuthenticatedShell(
+              client: configuredClient,
               onSignOut: repository.signOut,
             ),
     );
   }
+}
+
+class _AuthenticatedShell extends StatefulWidget {
+  const _AuthenticatedShell({required this.client, required this.onSignOut});
+
+  final SupabaseClient client;
+  final VoidCallback onSignOut;
+
+  @override
+  State<_AuthenticatedShell> createState() => _AuthenticatedShellState();
+}
+
+class _AuthenticatedShellState extends State<_AuthenticatedShell> {
+  int _selectedIndex = 0;
+  bool _lifeVisited = false;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: IndexedStack(
+      index: _selectedIndex,
+      children: [
+        TodayScreen(
+          repository: SupabaseTaskRepository(widget.client),
+          onSignOut: widget.onSignOut,
+        ),
+        if (_lifeVisited)
+          LifeScreen(
+            repository: SupabaseLifeRepository(widget.client),
+            onSignOut: widget.onSignOut,
+          )
+        else
+          const SizedBox.shrink(),
+      ],
+    ),
+    bottomNavigationBar: NavigationBar(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: (index) => setState(() {
+        _selectedIndex = index;
+        if (index == 1) _lifeVisited = true;
+      }),
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.today_outlined),
+          selectedIcon: Icon(Icons.today_rounded),
+          label: 'Hoje',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.bubble_chart_outlined),
+          selectedIcon: Icon(Icons.bubble_chart_rounded),
+          label: 'Vida',
+        ),
+      ],
+    ),
+  );
 }
 
 class _TodayPlaceholder extends StatelessWidget {

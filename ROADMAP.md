@@ -1,7 +1,7 @@
 # Life OS — Roadmap do projeto
 
 **Data:** 24/11/2026
-**Status:** primeira fatia mobile implementada e validada em Android local; nenhum serviço de produção foi criado.
+**Status:** base mobile implementada; núcleo de direção em andamento no Flutter e no Supabase local.
 **Base:** [PRD](./life-os.md), [arquitetura mobile](./arquitetura.md) e [instruções para agentes](./AGENTS.md).
 
 ## Estado atual
@@ -12,8 +12,11 @@
 - Login, cadastro, recuperação de senha, sessão em armazenamento seguro e fluxo Hoje com criação/leitura de tarefas implementados.
 - `flutter analyze`, 10 testes Flutter, migrações e 12 verificações pgTAP passaram; build e jornada Android foram validados no emulador.
 - Persistência após reabrir o app e isolamento entre duas contas foram verificados no Android local e no banco.
+- Fase 2 iniciada: oito áreas padrão, edição/ordenação/arquivamento, avaliações por data, notas de atenção, média e histórico com roda acessível.
+- As novas migrações foram aplicadas no Supabase local; advisors não apontam issues. `flutter analyze` está limpo e o APK debug foi gerado.
+- O fluxo das novas tabelas ainda não passou por pgTAP nem por jornada manual no emulador; suas políticas RLS precisam dessa validação antes de produção.
 - iOS ainda exige macOS/Xcode. Não existe ambiente hospedado, assinatura de release, CI ou fila offline.
-- Próximo: revisar a experiência do MVP e avançar para áreas da vida/metas, mantendo validação de acesso no servidor.
+- Próximo: onboarding retomável, visão de vida e metas anuais/trimestrais com critérios de sucesso e progresso.
 
 ## Visão do roadmap
 
