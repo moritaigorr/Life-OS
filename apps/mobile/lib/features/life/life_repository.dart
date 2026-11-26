@@ -21,4 +21,11 @@ abstract interface class LifeRepository {
     required String operationId,
     required LifeAssessmentDraft draft,
   });
+
+  Future<void> updateAssessment({
+    required String assessmentId,
+    required LifeAssessmentDraft draft,
+  });
+
+  Future<void> setAssessmentArchived(String assessmentId, bool archived);
 }

@@ -7,6 +7,8 @@ import 'features/auth/auth_repository.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/life/life_screen.dart';
 import 'features/life/supabase_life_repository.dart';
+import 'features/life/life_direction_screen.dart';
+import 'features/life/supabase_life_direction_repository.dart';
 import 'features/tasks/supabase_task_repository.dart';
 import 'features/tasks/today_screen.dart';
 import 'theme/app_theme.dart';
@@ -59,6 +61,7 @@ class _AuthenticatedShell extends StatefulWidget {
 class _AuthenticatedShellState extends State<_AuthenticatedShell> {
   int _selectedIndex = 0;
   bool _lifeVisited = false;
+  bool _directionVisited = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -76,6 +79,13 @@ class _AuthenticatedShellState extends State<_AuthenticatedShell> {
           )
         else
           const SizedBox.shrink(),
+        if (_directionVisited)
+          LifeDirectionScreen(
+            repository: SupabaseLifeDirectionRepository(widget.client),
+            onSignOut: widget.onSignOut,
+          )
+        else
+          const SizedBox.shrink(),
       ],
     ),
     bottomNavigationBar: NavigationBar(
@@ -83,6 +93,7 @@ class _AuthenticatedShellState extends State<_AuthenticatedShell> {
       onDestinationSelected: (index) => setState(() {
         _selectedIndex = index;
         if (index == 1) _lifeVisited = true;
+        if (index == 2) _directionVisited = true;
       }),
       destinations: const [
         NavigationDestination(
@@ -94,6 +105,11 @@ class _AuthenticatedShellState extends State<_AuthenticatedShell> {
           icon: Icon(Icons.bubble_chart_outlined),
           selectedIcon: Icon(Icons.bubble_chart_rounded),
           label: 'Vida',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.flag_outlined),
+          selectedIcon: Icon(Icons.flag_rounded),
+          label: 'Direção',
         ),
       ],
     ),

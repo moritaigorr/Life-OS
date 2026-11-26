@@ -1,22 +1,19 @@
 # Life OS — Roadmap do projeto
 
-**Data:** 24/11/2026
-**Status:** base mobile implementada; núcleo de direção em andamento no Flutter e no Supabase local.
+**Data:** 25/11/2026
+**Status:** Fase 2 implementada e verificada em Flutter e PostgreSQL local alternativo; pgTAP na stack Supabase permanece pendente de Docker.
 **Base:** [PRD](./life-os.md), [arquitetura mobile](./arquitetura.md) e [instruções para agentes](./AGENTS.md).
 
 ## Estado atual
 
-- Ambiente local preparado: Flutter/Dart, Android SDK, emulador Android, Docker Desktop e Supabase CLI.
-- App Flutter criado em `apps/mobile`; cliente Supabase usa somente URL e chave publicável de desenvolvimento, fora do Git.
-- Migração inicial e isolamento de `tasks` por RLS aplicados no Supabase local; suíte pgTAP passou em 12 verificações.
-- Login, cadastro, recuperação de senha, sessão em armazenamento seguro e fluxo Hoje com criação/leitura de tarefas implementados.
-- `flutter analyze`, 10 testes Flutter, migrações e 12 verificações pgTAP passaram; build e jornada Android foram validados no emulador.
-- Persistência após reabrir o app e isolamento entre duas contas foram verificados no Android local e no banco.
-- Fase 2 iniciada: oito áreas padrão, edição/ordenação/arquivamento, avaliações por data, notas de atenção, média e histórico com roda acessível.
-- As novas migrações foram aplicadas no Supabase local; advisors não apontam issues. `flutter analyze` está limpo e o APK debug foi gerado.
-- O fluxo das novas tabelas ainda não passou por pgTAP nem por jornada manual no emulador; suas políticas RLS precisam dessa validação antes de produção.
-- iOS ainda exige macOS/Xcode. Não existe ambiente hospedado, assinatura de release, CI ou fila offline.
-- Próximo: onboarding retomável, visão de vida e metas anuais/trimestrais com critérios de sucesso e progresso.
+- App Flutter criado em `apps/mobile`; autenticação por e-mail, recuperação de senha, sessão segura e fluxo Hoje com tarefas persistidas estão implementados.
+- Áreas da vida incluem oito valores iniciais, edição, ordenação, arquivamento/restauração e avaliações datadas com notas, comentários, atenção, média e histórico.
+- Fase 2 implementada: onboarding retomável/ignorável com visão de vida, metas anuais e trimestrais com critérios de sucesso/progresso, associação opcional a áreas e objetivo anual, alerta leve para mais de três metas trimestrais ativas, edição/arquivamento/restauração de metas e avaliações.
+- `flutter analyze` sem problemas; os 26 testes Flutter passaram; APK Android debug compilado.
+- A nova migração criou `life_goals` e `life_onboarding`, constraints, RLS e RPCs para editar/arquivar/restaurar avaliações. Migração aplicada com sucesso em PostgreSQL 16 temporário.
+- Isolamento, operações CRUD de metas, vínculos de área, edição/arquivamento de avaliações e preservação do histórico foram verificados em PostgreSQL 16 com `auth.uid()` simulado e duas identidades. O arquivo pgTAP da fase está pronto, mas `supabase test db` não pôde ser executado nesta sessão porque Docker/Podman não estão disponíveis.
+- Android foi compilado; iOS ainda requer macOS/Xcode. Ainda não há ambiente hospedado, assinatura de release, CI ou fila offline.
+- Próxima fase: projetos, organização diária de tarefas, datas planejadas/prazos e prioridades.
 
 ## Visão do roadmap
 
@@ -36,7 +33,7 @@ Entregar primeiro um ciclo de uso confiável: a pessoa entende o momento atual, 
 |---|---:|---|
 | 0. Descoberta e decisões | 1–2 semanas | Fluxos prioritários e decisões de produto/infraestrutura validados |
 | 1. Fundação técnica | 2–3 semanas | App Flutter executável em Android/iOS, Supabase local/staging e pipeline básico |
-| 2. Núcleo de direção | 2–4 semanas | Áreas da vida, avaliações e objetivos persistidos com segurança |
+| 2. Núcleo de direção | 2–4 semanas | Concluída: áreas, avaliações, onboarding e metas persistidos com isolamento validado |
 | 3. Execução diária | 3–5 semanas | Projetos, tarefas, prioridades e tela Hoje |
 | 4. Semana e hábitos | 3–5 semanas | Planejamento semanal, hábitos e revisão fecham o ciclo do produto |
 | 5. Confiabilidade e beta | 2–4 semanas | Dados exportáveis, exclusão funcional e versão beta observável |

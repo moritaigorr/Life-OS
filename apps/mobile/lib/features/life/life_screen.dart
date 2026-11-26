@@ -30,6 +30,7 @@ class _LifeScreenState extends State<LifeScreen> {
   String? _selectedAssessmentId;
   LifeAssessmentDraft? _pendingDraft;
   String? _pendingOperationId;
+  bool _pendingIsUpdate = false;
   String? _actionMessage;
   bool _actionIsError = false;
   bool _saving = false;
@@ -90,16 +91,23 @@ class _LifeScreenState extends State<LifeScreen> {
     }
   }
 
-  Future<void> _startAssessment(List<LifeArea> activeAreas) async {
+  Future<void> _startAssessment(
+    List<LifeArea> activeAreas, {
+    LifeAssessment? initialAssessment,
+  }) async {
     if (_saving || activeAreas.isEmpty) return;
     final draft = await Navigator.of(context).push<LifeAssessmentDraft>(
       MaterialPageRoute(
-        builder: (_) => LifeAssessmentEditor(areas: activeAreas),
+        builder: (_) => LifeAssessmentEditor(
+          areas: activeAreas,
+          initialAssessment: initialAssessment,
+        ),
       ),
     );
     if (!mounted || draft == null) return;
     _pendingDraft = draft;
-    _pendingOperationId = _uuid.v4();
+    _pendingOperationId = initialAssessment?.id ?? _uuid.v4();
+    _pendingIsUpdate = initialAssessment != null;
     await _savePendingAssessment();
   }
 
@@ -112,13 +120,21 @@ class _LifeScreenState extends State<LifeScreen> {
       _actionMessage = null;
     });
     try {
-      await widget.repository.createAssessment(
-        operationId: operationId,
-        draft: draft,
-      );
+      if (_pendingIsUpdate) {
+        await widget.repository.updateAssessment(
+          assessmentId: operationId,
+          draft: draft,
+        );
+      } else {
+        await widget.repository.createAssessment(
+          operationId: operationId,
+          draft: draft,
+        );
+      }
       if (!mounted) return;
       _pendingDraft = null;
       _pendingOperationId = null;
+      _pendingIsUpdate = false;
       _showMessage('Avaliação salva.');
       await _refresh();
     } catch (_) {
@@ -130,6 +146,42 @@ class _LifeScreenState extends State<LifeScreen> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _setAssessmentArchived(
+    LifeAssessment assessment, {
+    required bool archived,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(archived ? 'Arquivar avaliação?' : 'Restaurar avaliação?'),
+        content: Text(
+          archived
+              ? 'A avaliação sairá da lista ativa. As notas e o histórico serão preservados.'
+              : 'A avaliação voltará à lista ativa.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(archived ? 'Arquivar' : 'Restaurar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await widget.repository.setAssessmentArchived(assessment.id, archived);
+      if (mounted) await _refresh();
+    } catch (_) {
+      if (mounted) {
+        _showMessage('Não foi possível atualizar a avaliação.', error: true);
+      }
     }
   }
 
@@ -269,9 +321,15 @@ class _LifeScreenState extends State<LifeScreen> {
   Widget _content(_LifeSnapshot data) {
     final activeAreas = data.areas.where((area) => !area.isArchived).toList();
     final archivedAreas = data.areas.where((area) => area.isArchived).toList();
+    final activeAssessments = data.assessments
+        .where((assessment) => !assessment.isArchived)
+        .toList();
+    final archivedAssessments = data.assessments
+        .where((assessment) => assessment.isArchived)
+        .toList();
     final selected = data.assessments.cast<LifeAssessment?>().firstWhere(
       (assessment) => assessment?.id == _selectedAssessmentId,
-      orElse: () => data.assessments.firstOrNull,
+      orElse: () => activeAssessments.firstOrNull,
     );
     final selectedIndex = selected == null
         ? -1
@@ -290,7 +348,12 @@ class _LifeScreenState extends State<LifeScreen> {
           children: [
             Text('Entenda como está cada parte da sua vida.'),
             const SizedBox(height: 16),
-            _assessmentSection(selected, previous, data.assessments),
+            _assessmentSection(
+              selected,
+              previous,
+              activeAssessments,
+              data.areas,
+            ),
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: _saving || activeAreas.isEmpty
@@ -304,6 +367,29 @@ class _LifeScreenState extends State<LifeScreen> {
                   : const Icon(Icons.add_rounded),
               label: Text(_saving ? 'Salvando avaliação' : 'Nova avaliação'),
             ),
+            if (archivedAssessments.isNotEmpty)
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: Text(
+                  'Avaliações arquivadas (${archivedAssessments.length})',
+                ),
+                children: [
+                  for (final assessment in archivedAssessments)
+                    ListTile(
+                      title: Text(_formatDate(assessment.assessedOn)),
+                      subtitle: Text(
+                        'Média ${assessment.average.toStringAsFixed(1)}',
+                      ),
+                      onTap: () =>
+                          setState(() => _selectedAssessmentId = assessment.id),
+                      trailing: TextButton(
+                        onPressed: () =>
+                            _setAssessmentArchived(assessment, archived: false),
+                        child: const Text('Restaurar'),
+                      ),
+                    ),
+                ],
+              ),
             if (_actionMessage case final message?) ...[
               const SizedBox(height: 8),
               Semantics(
@@ -408,6 +494,7 @@ class _LifeScreenState extends State<LifeScreen> {
     LifeAssessment? selected,
     LifeAssessment? previous,
     List<LifeAssessment> assessments,
+    List<LifeArea> areas,
   ) {
     if (selected == null) {
       return const _InlineNote(
@@ -475,6 +562,39 @@ class _LifeScreenState extends State<LifeScreen> {
               const Divider(height: 24),
               Text(comment),
             ],
+            if (selected.isArchived)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () =>
+                      _setAssessmentArchived(selected, archived: false),
+                  child: const Text('Restaurar avaliação'),
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                children: [
+                  TextButton.icon(
+                    onPressed: _saving
+                        ? null
+                        : () => _startAssessment(
+                            areas,
+                            initialAssessment: selected,
+                          ),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Editar avaliação'),
+                  ),
+                  TextButton.icon(
+                    onPressed: _saving
+                        ? null
+                        : () =>
+                              _setAssessmentArchived(selected, archived: true),
+                    icon: const Icon(Icons.archive_outlined),
+                    label: const Text('Arquivar avaliação'),
+                  ),
+                ],
+              ),
             if (assessments.length > 1) ...[
               const Divider(height: 24),
               Text('Histórico', style: Theme.of(context).textTheme.titleMedium),

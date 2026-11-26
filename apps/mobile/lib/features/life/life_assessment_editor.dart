@@ -5,18 +5,38 @@ import 'life_area.dart';
 import 'life_assessment.dart';
 
 class LifeAssessmentEditor extends StatefulWidget {
-  const LifeAssessmentEditor({required this.areas, super.key});
+  const LifeAssessmentEditor({
+    required this.areas,
+    this.initialAssessment,
+    super.key,
+  });
 
   final List<LifeArea> areas;
+  final LifeAssessment? initialAssessment;
 
   @override
   State<LifeAssessmentEditor> createState() => _LifeAssessmentEditorState();
 }
 
 class _LifeAssessmentEditorState extends State<LifeAssessmentEditor> {
-  final _commentController = TextEditingController();
+  late final TextEditingController _commentController;
   final Map<String, int> _scores = {};
   final Set<String> _needsAttention = {};
+  late DateTime _assessedOn;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialAssessment;
+    _assessedOn = DateUtils.dateOnly(initial?.assessedOn ?? DateTime.now());
+    _commentController = TextEditingController(text: initial?.comment ?? '');
+    for (final score in initial?.scores ?? const <LifeAssessmentScore>[]) {
+      if (score.score case final value?) _scores[score.areaId] = value;
+      if (score.score != null && score.needsAttention) {
+        _needsAttention.add(score.areaId);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -45,7 +65,7 @@ class _LifeAssessmentEditorState extends State<LifeAssessmentEditor> {
     final comment = _commentController.text.trim();
     Navigator.of(context).pop(
       LifeAssessmentDraft(
-        assessedOn: DateUtils.dateOnly(DateTime.now()),
+        assessedOn: _assessedOn,
         comment: comment.isEmpty ? null : comment,
         scores: [
           for (final area in widget.areas)
@@ -59,6 +79,22 @@ class _LifeAssessmentEditorState extends State<LifeAssessmentEditor> {
       ),
     );
   }
+
+  Future<void> _pickDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _assessedOn,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2200),
+    );
+    if (selected != null) {
+      setState(() => _assessedOn = DateUtils.dateOnly(selected));
+    }
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -81,6 +117,13 @@ class _LifeAssessmentEditorState extends State<LifeAssessmentEditor> {
                     ?.copyWith(color: AppColors.mutedInk),
               ),
               const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Data da avaliação'),
+                subtitle: Text(_formatDate(_assessedOn)),
+                trailing: const Icon(Icons.calendar_today_outlined),
+                onTap: _pickDate,
+              ),
               for (final area in widget.areas) _areaCard(area),
               const SizedBox(height: 8),
               TextField(
@@ -103,7 +146,11 @@ class _LifeAssessmentEditorState extends State<LifeAssessmentEditor> {
       minimum: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: FilledButton(
         onPressed: _save,
-        child: const Text('Salvar avaliação'),
+        child: Text(
+          widget.initialAssessment == null
+              ? 'Salvar avaliação'
+              : 'Salvar alterações',
+        ),
       ),
     ),
   );

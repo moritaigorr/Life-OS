@@ -54,7 +54,7 @@ class SupabaseLifeRepository implements LifeRepository {
   }) async {
     final rows = await _client
         .from('assessments')
-        .select('id, assessed_on, comment')
+        .select('id, assessed_on, comment, archived_at')
         .order('assessed_on', ascending: false)
         .order('created_at', ascending: false)
         .order('id')
@@ -85,6 +85,9 @@ class SupabaseLifeRepository implements LifeRepository {
             id: id,
             assessedOn: DateTime.parse(row['assessed_on'] as String),
             comment: row['comment'] as String?,
+            archivedAt: row['archived_at'] == null
+                ? null
+                : DateTime.parse(row['archived_at'] as String),
             scores: List.unmodifiable(
               scoresByAssessment[id] ?? const <LifeAssessmentScore>[],
             ),
@@ -115,6 +118,39 @@ class SupabaseLifeRepository implements LifeRepository {
         'p_comment': comment == null || comment.isEmpty ? null : comment,
         'p_scores': draft.scores.map((score) => score.toJson()).toList(),
       },
+    );
+  }
+
+  @override
+  Future<void> updateAssessment({
+    required String assessmentId,
+    required LifeAssessmentDraft draft,
+  }) async {
+    final comment = draft.comment?.trim();
+    if (draft.scores.isEmpty) throw const InvalidLifeAssessment();
+    if (comment != null && comment.runes.length > 1000) {
+      throw const InvalidLifeAssessment();
+    }
+    final date =
+        '${draft.assessedOn.year.toString().padLeft(4, '0')}'
+        '-${draft.assessedOn.month.toString().padLeft(2, '0')}'
+        '-${draft.assessedOn.day.toString().padLeft(2, '0')}';
+    await _client.rpc(
+      'update_life_assessment',
+      params: {
+        'p_assessment_id': assessmentId,
+        'p_assessed_on': date,
+        'p_comment': comment == null || comment.isEmpty ? null : comment,
+        'p_scores': draft.scores.map((score) => score.toJson()).toList(),
+      },
+    );
+  }
+
+  @override
+  Future<void> setAssessmentArchived(String assessmentId, bool archived) async {
+    await _client.rpc(
+      'set_life_assessment_archived',
+      params: {'p_assessment_id': assessmentId, 'p_archived': archived},
     );
   }
 }

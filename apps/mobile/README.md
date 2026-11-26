@@ -1,6 +1,6 @@
 # Life OS mobile
 
-Flutter mobile app for Android and iOS. The app includes email authentication, secure session persistence, password recovery, the Today task list, and the first Life area and assessment flow backed by local Supabase.
+Flutter mobile app for Android and iOS. The app includes email authentication, secure session persistence, password recovery, Today, Life areas and assessments, plus the Life Direction onboarding and annual/quarterly goals.
 
 ## Development environment
 
@@ -65,6 +65,19 @@ server confirms it. Offline writes are not queued in this slice.
 The Life area flow creates eight defaults on first visit. Areas can be renamed,
 reordered, archived, and restored. Assessments preserve their date, area names,
 order, scores, attention flags, and optional comment; each score is between 0
-and 10, and unscored areas do not affect the average. New Life tables and RLS
-have been applied locally; production use still requires policy tests and
-cross-account verification.
+and 10, and unscored areas do not affect the average. Active assessments can be
+edited, archived, and restored without removing their score snapshots.
+
+The Life Direction flow stores a resumable or skippable onboarding state and a
+private life vision. Annual and quarterly goals support optional life-area and
+annual-goal links, success criteria, progress, editing, and archiving. The UI
+shows a gentle reminder when more than three quarterly goals are active.
+
+The Phase 2 migration adds `life_goals`, `life_onboarding`, assessment edit and
+archive RPCs, ownership policies, and database constraints. Flutter analysis,
+all 26 tests, and a debug APK build passed. The migration and ownership rules
+were exercised against a temporary PostgreSQL 16 database with a simulated
+`auth.uid()` and two identities. Supabase pgTAP remains to be run on the local
+Supabase stack; this session could not start that stack because Docker/Podman
+was unavailable. Run `supabase test db` before using these tables in a hosted
+environment.

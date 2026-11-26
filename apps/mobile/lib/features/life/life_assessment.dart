@@ -59,12 +59,16 @@ class LifeAssessment {
     required this.assessedOn,
     required this.scores,
     this.comment,
+    this.archivedAt,
   });
 
   final String id;
   final DateTime assessedOn;
   final String? comment;
+  final DateTime? archivedAt;
   final List<LifeAssessmentScore> scores;
+
+  bool get isArchived => archivedAt != null;
 
   double get average {
     final rated = scores.where((item) => item.score != null);
